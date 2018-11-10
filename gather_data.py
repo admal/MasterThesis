@@ -7,9 +7,8 @@ import os
 import datetime
 import random
 import time
-import carla
 from carla.client import make_carla_client
-from carla.sensor import Camera, Lidar
+from carla.sensor import Camera
 from carla.settings import CarlaSettings
 from carla.tcp import TCPConnectionError
 from carla.util import print_over_same_line
@@ -61,9 +60,9 @@ def create_out_directory():
 
 
 def add_cameras(settings):
-	camera_pos_x = 0.30
+	camera_pos_x = 2
 	camera_pos_y = 0
-	camera_pos_z = 1.30
+	camera_pos_z = 1
 
 	camera0 = Camera('CameraRGB')
 	camera0.set_image_size(800, 600)
@@ -142,7 +141,7 @@ def start_gathering_data(args, out_directory):
 			print_measurements(frame, measurements)
 
 			for name, measurement in sensor_data.items():
-				filename = out_directory + '\\{:0>6d}'.format(frame)
+				filename = out_directory + '\\{}_{:0>6d}'.format(name, frame)
 				measurement.save_to_disk(filename)
 
 			control = measurements.player_measurements.autopilot_control
@@ -169,10 +168,6 @@ def parse_arguments():
 		default=2000,
 		type=int,
 		help='TCP port to listen to (default: 2000)')
-	argparser.add_argument(
-		'-a', '--autopilot',
-		action='store_true',
-		help='enable autopilot')
 	argparser.add_argument(
 		'-q', '--quality-level',
 		choices=['Low', 'Epic'],
@@ -216,7 +211,7 @@ def main():
 
 	while True:
 		try:
-			start_gathering_data(args)
+			start_gathering_data(args, out_directory)
 			print("\nFinished (at {})".format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 			return
 
