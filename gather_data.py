@@ -2,6 +2,7 @@ import configparser
 import cv2
 import numpy as np
 import argparse
+import csv
 import logging
 import os
 import datetime
@@ -126,6 +127,9 @@ def print_measurements(frame, measurements):
 	print_over_same_line(message)
 
 
+def write_measurements_to_csv(measurements_file, frame, autopilot_measurements):
+	measurements_file.writerow([frame, autopilot_measurements.steer, autopilot_measurements.throttle, autopilot_measurements.brake])
+
 def start_gathering_data(args, out_directory):
 	with make_carla_client(args.host, args.port) as client:
 		settings = get_settings_for_scene(args)
@@ -136,16 +140,20 @@ def start_gathering_data(args, out_directory):
 		player_start = random.randint(0, max(0, number_of_player_starts - 1))
 		client.start_episode(player_start)
 
-		for frame in range(args.frames):
-			measurements, sensor_data = client.read_data()
-			print_measurements(frame, measurements)
+		with open(out_directory + '\\measurements.csv', 'w', newline='') as csvfile:
+			measurements_file = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
-			for name, measurement in sensor_data.items():
-				filename = out_directory + '\\{}_{:0>6d}'.format(name, frame)
-				measurement.save_to_disk(filename)
+			for frame in range(args.frames):
+				measurements, sensor_data = client.read_data()
+				print_measurements(frame, measurements)
+				write_measurements_to_csv(measurements_file, frame, measurements.player_measurements.autopilot_control)
 
-			control = measurements.player_measurements.autopilot_control
-			client.send_control(control)
+				for name, measurement in sensor_data.items():
+					filename = out_directory + '\\{}_{:0>6d}'.format(name, frame)
+					measurement.save_to_disk(filename)
+
+				control = measurements.player_measurements.autopilot_control
+				client.send_control(control)
 
 	pass
 
