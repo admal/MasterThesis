@@ -44,25 +44,44 @@ def create_out_directory():
 	return out_directory
 
 
+class CameraSettings:
+	x = 0
+	y = 0
+	z = 0
+
+	width = 800
+	height = 600
+	name = ''
+	postprocessing = "SceneFinal"
+
+	def __init__(self, x, y, z, name, postprocessing):
+		self.x = x
+		self.y = y
+		self.z = z
+		self.name = name
+		self.postprocessing = postprocessing
+
+
+def create_camera(settings, camera_settings):
+	camera = Camera(camera_settings.name)
+	camera.set_image_size(camera_settings.width, camera_settings.height)
+	camera.set_position(camera_settings.x, camera_settings.y, camera_settings.z)
+	settings.add_sensor(camera)
+
+
 def add_cameras(settings):
 	camera_pos_x = 2
 	camera_pos_y = 0
 	camera_pos_z = 1
 
-	camera0 = Camera('CameraRGB')
-	camera0.set_image_size(800, 600)
-	camera0.set_position(camera_pos_x, camera_pos_y, camera_pos_z)
-	settings.add_sensor(camera0)
+	camera_settings = CameraSettings(camera_pos_x, camera_pos_y, camera_pos_z, "CameraRGB_C", "SceneFinal")
+	create_camera(settings, camera_settings)
 
-	camera1 = Camera('CameraDepth', PostProcessing='Depth')
-	camera1.set_image_size(800, 600)
-	camera1.set_position(camera_pos_x, camera_pos_y, camera_pos_z)
-	settings.add_sensor(camera1)
+	camera_settings = CameraSettings(camera_pos_x, camera_pos_y + 0.3, camera_pos_z, "CameraRGB_R", "SceneFinal")
+	create_camera(settings, camera_settings)
 
-	camera2 = Camera('CameraSS', PostProcessing='SemanticSegmentation')
-	camera2.set_image_size(800, 600)
-	camera2.set_position(camera_pos_x, camera_pos_y, camera_pos_z)
-	settings.add_sensor(camera2)
+	camera_settings = CameraSettings(camera_pos_x, camera_pos_y - 0.3, camera_pos_z, "CameraRGB_L", "SceneFinal")
+	create_camera(settings, camera_settings)
 
 
 def generate_settings(args):
@@ -112,7 +131,9 @@ def print_measurements(frame, measurements):
 
 
 def write_measurements_to_csv(measurements_file, frame, autopilot_measurements):
-	measurements_file.writerow([frame, autopilot_measurements.steer, autopilot_measurements.throttle, autopilot_measurements.brake])
+	measurements_file.writerow(
+		[frame, autopilot_measurements.steer, autopilot_measurements.throttle, autopilot_measurements.brake])
+
 
 def start_gathering_data(args, out_directory):
 	with make_carla_client(args.host, args.port) as client:
@@ -124,17 +145,29 @@ def start_gathering_data(args, out_directory):
 		player_start = random.randint(0, max(0, number_of_player_starts - 1))
 		client.start_episode(player_start)
 
+		skip_frames = args.skip_frames  # make screen every skip_frames
+
 		with open(out_directory + '\\measurements.csv', 'w', newline='') as csvfile:
 			measurements_file = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
-			for frame in range(args.frames):
+			# let skip first 20 frames (car is in the air)
+			for skip_frame in range(20):
+				measurements, sensor_data = client.read_data()
+				logging.info("Skipping frames...")
+				control = measurements.player_measurements.autopilot_control
+				client.send_control(control)
+
+			for frame in range(args.frames * skip_frames):
 				measurements, sensor_data = client.read_data()
 				print_measurements(frame, measurements)
-				write_measurements_to_csv(measurements_file, frame, measurements.player_measurements.autopilot_control)
 
-				for name, measurement in sensor_data.items():
-					filename = out_directory + '\\{}_{:0>6d}'.format(name, frame)
-					measurement.save_to_disk(filename)
+				if frame % skip_frames == 0:
+					logging.info("{}: Save".format(frame))
+					write_measurements_to_csv(measurements_file, frame,
+					                          measurements.player_measurements.autopilot_control)
+					for name, measurement in sensor_data.items():
+						filename = out_directory + '\\{}_{:0>6d}'.format(name, int(frame / skip_frames))
+						measurement.save_to_disk(filename)
 
 				control = measurements.player_measurements.autopilot_control
 				client.send_control(control)
@@ -183,6 +216,12 @@ def parse_arguments():
 		type=int,
 		default=0,
 		help='weather preset'
+	)
+	argparser.add_argument(
+		'-s', '--skip_frames',
+		type=int,
+		default=20,
+		help='save screen every skip_frames'
 	)
 
 	args = argparser.parse_args()
