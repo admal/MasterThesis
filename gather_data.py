@@ -14,6 +14,8 @@ from carla.settings import CarlaSettings
 from carla.tcp import TCPConnectionError
 from carla.util import print_over_same_line
 
+from config import MEASUREMENTS_CSV_FILENAME
+
 weather_presets = {
 	0: 'Default',
 	1: 'ClearNoon',
@@ -147,7 +149,7 @@ def start_gathering_data(args, out_directory):
 
 		skip_frames = args.skip_frames  # make screen every skip_frames
 
-		with open(out_directory + '\\measurements.csv', 'w', newline='') as csvfile:
+		with open(out_directory + '\\'+MEASUREMENTS_CSV_FILENAME, 'w', newline='') as csvfile:
 			measurements_file = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
 			# let skip first 20 frames (car is in the air)
@@ -166,7 +168,7 @@ def start_gathering_data(args, out_directory):
 					write_measurements_to_csv(measurements_file, frame,
 					                          measurements.player_measurements.autopilot_control)
 					for name, measurement in sensor_data.items():
-						filename = out_directory + '\\{}_{:0>6d}'.format(name, int(frame / skip_frames))
+						filename = out_directory + '\\{}_{:0>6d}'.format(name, int(frame))
 						measurement.save_to_disk(filename)
 
 				control = measurements.player_measurements.autopilot_control

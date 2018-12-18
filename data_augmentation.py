@@ -111,7 +111,7 @@ def choose_image(center, left, right, angle):
 	if chosen == 1:
 		return left, angle - 0.2
 	if chosen == 2:
-		return right + 0.2
+		return right, angle + 0.2
 
 
 def preprocess(img):
@@ -142,17 +142,20 @@ def load_images(directory_path, frame):
 def get_acceleration(acceleration, braking):
 	return acceleration - braking # we can not have both values different 0. So we get either acceleration either -breaking, range[-1, 1]
 
+def normalize_colors(img):
+	return img / 127.5 - 1.0
 
-def batch_generator(data_dir, frames, steerings, batch_size, is_training):
+def batch_generator(data, batch_size, is_training):
 	images = np.empty([batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
-	steers = np.empty(batch_size)
-	accelerations = np.empty(batch_size)
+	steers = np.empty([batch_size, 2])
+
 	while True:
 		i = 0
-		for idx in np.random.permutation(frames):
-			frame = frames[idx]
-			steering_angle, acceleration, braking = steerings[idx]
+		for idx in np.random.permutation(len(data)):
+			row = data[idx]
+			data_dir, frame, steering_angle, acceleration, braking = row
 			acceleration_brake_val = get_acceleration(acceleration, braking)
+
 			# argumentation
 			if is_training and np.random.rand() < 0.6:
 				center, left, right = load_images(data_dir, frame)
@@ -161,9 +164,12 @@ def batch_generator(data_dir, frames, steerings, batch_size, is_training):
 				image = load_image(data_dir, CENTER_CAMERA_NAME.format(frame))
 
 			# add the image and steering angle to the batch
-			images[i] = preprocess(image)
-			steers[i] = steering_angle
-			accelerations[i] = acceleration_brake_val
+			image = preprocess(image)
+			images[i] = normalize_colors(image)
+			# steers[i] = steering_angle
+			# accelerations[i] = acceleration_brake_val
+			steers[i, 0] = steering_angle
+			steers[i, 1] = acceleration_brake_val
 			i += 1
 			if i == batch_size:
 				break

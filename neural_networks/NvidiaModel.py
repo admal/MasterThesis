@@ -1,0 +1,2 @@
+class NvidiaModel:
+	pass
