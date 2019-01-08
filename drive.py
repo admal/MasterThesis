@@ -74,7 +74,7 @@ def drive(args, model):
 def main(args):
 	print("Loading model...")
 	model = VGG16Model().model()
-	model = VGG16Model.load_weights(model, "model-009.h5")
+	model = VGG16Model.load_weights(model, "trained_models\\model-009.h5")
 
 	while True:
 		try:
@@ -85,11 +85,6 @@ def main(args):
 		except TCPConnectionError as error:
 			logging.error(error)
 			time.sleep(1)
-
-
-
-
-
 
 
 if __name__ == '__main__':

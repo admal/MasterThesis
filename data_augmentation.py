@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import os
+import logging
 
 from config import CENTER_CAMERA_NAME, LEFT_CAMERA_NAME, RIGHT_CAMERA_NAME
 
@@ -145,6 +146,22 @@ def get_acceleration(acceleration, braking):
 def normalize_colors(img):
 	return img / 127.5 - 1.0
 
+def print_batch_information(steers):
+	left_count = 0
+	right_count = 0
+	straight_count = 0
+	total = len(steers)
+
+	for steer in steers:
+		if steer > 0.2:
+			right_count += 1
+		elif steer < 0.2:
+			left_count += 1
+		else:
+			straight_count += 1
+
+	logging.info("total: {}, left: {}, right: {}, straight: {}".format(total, left_count, right_count, straight_count))
+
 def batch_generator(data, batch_size, is_training):
 	images = np.empty([batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
 	steers = np.empty([batch_size, 2])
@@ -173,6 +190,8 @@ def batch_generator(data, batch_size, is_training):
 			i += 1
 			if i == batch_size:
 				break
+
+		print_batch_information(steers)
 		yield images, steers
 
 
