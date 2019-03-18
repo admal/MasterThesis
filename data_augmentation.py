@@ -191,7 +191,6 @@ def batch_generator(data, batch_size, is_training):
 			if i == batch_size:
 				break
 
-		print_batch_information(steers)
 		yield images, steers
 
 
