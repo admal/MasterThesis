@@ -1,6 +1,3 @@
-import configparser
-import cv2
-import numpy as np
 import argparse
 import csv
 import logging
@@ -12,7 +9,6 @@ from carla.client import make_carla_client
 from carla.sensor import Camera
 from carla.settings import CarlaSettings
 from carla.tcp import TCPConnectionError
-from carla.util import print_over_same_line
 
 from config import MEASUREMENTS_CSV_FILENAME
 
@@ -110,28 +106,6 @@ def get_settings_for_scene(args):
 	return settings
 
 
-def print_measurements(frame, measurements):
-	number_of_agents = len(measurements.non_player_agents)
-	player_measurements = measurements.player_measurements
-	message = '' + str(frame) + ' '
-	message += 'Vehicle at ({pos_x:.1f}, {pos_y:.1f}), '
-	message += '{speed:.0f} km/h, '
-	message += 'Collision: {{vehicles={col_cars:.0f}, pedestrians={col_ped:.0f}, other={col_other:.0f}}}, '
-	message += '{other_lane:.0f}% other lane, {offroad:.0f}% off-road, '
-	message += '({agents_num:d} non-player agents in the scene)'
-	message = message.format(
-		pos_x=player_measurements.transform.location.x,
-		pos_y=player_measurements.transform.location.y,
-		speed=player_measurements.forward_speed * 3.6,  # m/s -> km/h
-		col_cars=player_measurements.collision_vehicles,
-		col_ped=player_measurements.collision_pedestrians,
-		col_other=player_measurements.collision_other,
-		other_lane=100 * player_measurements.intersection_otherlane,
-		offroad=100 * player_measurements.intersection_offroad,
-		agents_num=number_of_agents)
-	print_over_same_line(message)
-
-
 def write_measurements_to_csv(measurements_file, frame, autopilot_measurements):
 	measurements_file.writerow(
 		[frame, autopilot_measurements.steer, autopilot_measurements.throttle, autopilot_measurements.brake])
@@ -149,7 +123,7 @@ def start_gathering_data(args, out_directory):
 
 		skip_frames = args.skip_frames  # make screen every skip_frames
 
-		with open(out_directory + '\\'+MEASUREMENTS_CSV_FILENAME, 'w', newline='') as csvfile:
+		with open(out_directory + '\\' + MEASUREMENTS_CSV_FILENAME, 'w', newline='') as csvfile:
 			measurements_file = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
 			# let skip first 20 frames (car is in the air)
@@ -159,22 +133,43 @@ def start_gathering_data(args, out_directory):
 				control = measurements.player_measurements.autopilot_control
 				client.send_control(control)
 
-			for frame in range(args.frames * skip_frames):
+			frame = 0
+			saved_frames = 0
+			last_log_skip_frame = 0
+			while True:
 				measurements, sensor_data = client.read_data()
-				print_measurements(frame, measurements)
+
+				# if car is standing than data is ignored
+				if measurements.player_measurements.forward_speed <= 0.1 and measurements.player_measurements.autopilot_control.throttle == 0:
+					if last_log_skip_frame != frame:
+						logging.info("[{}] Car is stopped, skip saving screen...".format(frame))
+						last_log_skip_frame = frame
+					control = measurements.player_measurements.autopilot_control
+					client.send_control(control)
+					continue
 
 				if frame % skip_frames == 0:
-					logging.info("{}: Save".format(frame))
-					write_measurements_to_csv(measurements_file, frame,
-					                          measurements.player_measurements.autopilot_control)
+					saved_frames = saved_frames + 1
+					logging.info("[SAVE] {}/{}: steering: {}, acc: {}, brake: {} ".format(
+						saved_frames,
+						args.frames,
+						measurements.player_measurements.autopilot_control.steer,
+						measurements.player_measurements.autopilot_control.throttle,
+						measurements.player_measurements.autopilot_control.brake))
+
+					write_measurements_to_csv(measurements_file, frame, measurements.player_measurements.autopilot_control)
+
 					for name, measurement in sensor_data.items():
 						filename = out_directory + '\\{}_{:0>6d}'.format(name, int(frame))
 						measurement.save_to_disk(filename)
 
+				frame = frame + 1
 				control = measurements.player_measurements.autopilot_control
 				client.send_control(control)
 
-	pass
+				if saved_frames >= args.frames:
+					logging.info("Saved frames: {}; STOP".format(saved_frames))
+					break
 
 
 def parse_arguments():
@@ -211,7 +206,7 @@ def parse_arguments():
 		'-f', '--frames',
 		type=int,
 		default=None,
-		help='number of frames to be generated (default: 1000)'
+		help='number of frames to be saved (default: 1000)'
 	)
 	argparser.add_argument(
 		'-w', '--weather',
@@ -222,7 +217,7 @@ def parse_arguments():
 	argparser.add_argument(
 		'-s', '--skip_frames',
 		type=int,
-		default=20,
+		default=10,
 		help='save screen every skip_frames'
 	)
 
