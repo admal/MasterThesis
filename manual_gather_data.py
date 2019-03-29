@@ -62,7 +62,7 @@ class Timer(object):
 class CarlaGame(object):
 	def __init__(self, carla_client, args):
 		self.client = carla_client
-		self._carla_settings = get_settings_for_scene(args)
+		self._carla_settings = get_settings_for_scene(args, sync_mode=False)
 		self._timer = None
 		self._display = None
 		self._main_image = None
@@ -138,8 +138,8 @@ class CarlaGame(object):
 
 			write_measurements_to_csv(measurements_file, frame, control)
 
-			for name, measurement in sensor_data.items():
-				save_frame_image(self._out_directory, frame, measurement, name)
+			for name, sensor_data in sensor_data.items():
+				save_frame_image(self._out_directory, frame, sensor_data, name)
 
 		if control is None:
 			self._on_new_episode()
@@ -163,8 +163,8 @@ class CarlaGame(object):
 		elif trigger_value < 0:
 			control.throttle = -trigger_value
 		
-		control.steer  = self._current_joystick.get_axis(X_AXIS)
-		if control.steer > X_AXIS_DEADZONE[0] and control.steer < X_AXIS_DEADZONE[1]:
+		control.steer = self._current_joystick.get_axis(X_AXIS)
+		if X_AXIS_DEADZONE[0] < control.steer < X_AXIS_DEADZONE[1]:
 			control.steer = 0
 		
 		return control

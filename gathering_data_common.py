@@ -1,9 +1,11 @@
 import datetime
 import os
 import argparse
+import cv2
 
 from carla.sensor import Camera
 from carla.settings import CarlaSettings
+from data_augmentation import preprocess
 
 weather_presets = {
 	0: 'Default',
@@ -75,10 +77,10 @@ def add_cameras(settings):
 	create_camera(settings, camera_settings)
 
 
-def generate_settings(args):
+def generate_settings(args, sync_mode=True):
 	settings = CarlaSettings()
 	settings.set(
-		SynchronousMode=True,
+		SynchronousMode=sync_mode,
 		SendNonPlayerAgentsInfo=False,
 		NumberOfVehicles=0,
 		NumberOfPedestrians=0,
@@ -89,9 +91,9 @@ def generate_settings(args):
 	return settings
 
 
-def get_settings_for_scene(args):
+def get_settings_for_scene(args, sync_mode=True):
 	if args.settings_filepath is None:
-		settings = generate_settings(args)
+		settings = generate_settings(args, sync_mode)
 		add_cameras(settings)
 	else:
 		with open(args.settings_filepath, 'r') as fp:
@@ -155,6 +157,8 @@ def generate_run_arguments():
 	return argparser
 
 
-def save_frame_image(out_directory,frame, measurement, name):
-	filename = out_directory + '\\{}_{:0>6d}'.format(name, int(frame))
-	measurement.save_to_disk(filename)
+def save_frame_image(out_directory, frame, sensor_data, name):
+	filename = out_directory + '\\{}_{:0>6d}.png'.format(name, int(frame))
+	data = preprocess(sensor_data.data)
+	data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+	cv2.imwrite(filename, data)
