@@ -52,7 +52,7 @@ if __name__ == '__main__':
 	log("Start gathering data...")
 
 	frames_count = 1000
-	config_file = 'C:\\Carla\\builds\\build1\\WindowsNoEditor\\Example.CarlaSettings.ini'
+	config_file = 'C:\\Carla\\builds\\build1\\WindowsNoEditor\\CarlaSettings.ini'
 	carla_server_file = 'C:\\Carla\\builds\\build1\\WindowsNoEditor\\CarlaUE4.exe'
 	gather_data_file = "C:\\Users\\Adam\\Documents\\Materialy_pw\\PW\\Magisterka\\AutonomousCarProject\\gather_data.py"
 
