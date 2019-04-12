@@ -139,7 +139,7 @@ def generate_run_arguments():
 	argparser.add_argument(
 		'-f', '--frames',
 		type=int,
-		default=None,
+		default=1000,
 		help='number of frames to be saved (default: 1000)'
 	)
 	argparser.add_argument(
@@ -159,6 +159,7 @@ def generate_run_arguments():
 
 def save_frame_image(out_directory, frame, sensor_data, name):
 	filename = out_directory + '\\{}_{:0>6d}.png'.format(name, int(frame))
-	data = preprocess(sensor_data.data)
+	data = sensor_data.data
+	data = preprocess(data)
 	data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
 	cv2.imwrite(filename, data)
