@@ -49,7 +49,7 @@ def drive(args, model):
 		print("Starting episode...")
 		# Choose one player start at random.
 		number_of_player_starts = len(scene.player_start_spots)
-		player_start = random.randint(0, max(0, number_of_player_starts - 1))
+		player_start = 0# random.randint(0, max(0, number_of_player_starts - 1))
 		client.start_episode(player_start)
 		print("Start driving...")
 		while True:
@@ -64,7 +64,7 @@ def drive(args, model):
 				ret = model.predict(input)[0]
 				print(ret)
 				steer = ret[0]
-				acceleration = 0.5 + ret[1] #TMP
+				acceleration = ret[1]
 
 			control = VehicleControl()
 			control.steer = steer
@@ -74,7 +74,7 @@ def drive(args, model):
 def main(args):
 	print("Loading model...")
 	model = VGG16Model().model()
-	model = VGG16Model.load_weights(model, "trained_models\\model-009.h5")
+	model = VGG16Model.load_weights(model, "trained_models\\vgg\\vgg-model-001.h5")
 
 	while True:
 		try:

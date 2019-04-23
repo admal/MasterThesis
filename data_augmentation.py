@@ -149,12 +149,6 @@ def normalize_colors(img):
 
 
 def tmp_name(row, is_training, images, steers, i):
-	# frame = row['frame']
-	# steering_angle = row['steering']
-	# acceleration = row['throttle']
-	# braking = row['brake']
-	# data_dir = row['data_dir']
-
 	frame, steering_angle, acceleration, braking, data_dir = row
 	acceleration_brake_val = get_acceleration(acceleration, braking)
 	# argumentation
@@ -170,14 +164,8 @@ def tmp_name(row, is_training, images, steers, i):
 	steers[i, 1] = acceleration_brake_val
 
 
-def balanced_data_batch_generator(data, single_batch_size, is_training):
-	"""
-	Generates balanced data batch of size 3*single_batch_size
-	:param data: all data provided
-	:param single_batch_size: size of single data type, whole batch_size=3 * single_batch_size
-	:param is_training:
-	:return:
-	"""
+def balanced_data_batch_generator(data, batch_size, is_training):
+	single_batch_size = int(batch_size / 3)
 	images = np.empty([3 * single_batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
 	steers = np.empty([3 * single_batch_size, 2])
 

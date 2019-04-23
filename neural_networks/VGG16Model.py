@@ -1,40 +1,49 @@
 import tensorflow as tf
 from config import *
 from data_augmentation import INPUT_SHAPE
+from neural_networks.ModelBase import ModelBase
 
 
-class VGG16Model:
+class VGG16Model(ModelBase):
 	def model(self):
-		model_vgg16_conv = tf.keras.applications.VGG16(weights='imagenet', include_top=False)
-		model_vgg16_conv.summary()
+		model_vgg16_conv = tf.keras.applications.VGG16(
+			weights='imagenet',
+			include_top=False,
+			input_shape=INPUT_SHAPE
+		)
 
-		input = tf.keras.layers.Input(shape=INPUT_SHAPE, name='image_input')
-		# Use the generated model
-		output_vgg16_conv = model_vgg16_conv(input)
+		ret_model = tf.keras.models.Sequential()
+		ret_model.add(model_vgg16_conv)
+		ret_model.add(
+			tf.keras.layers.Flatten()
+		)
+		ret_model.add(
+			tf.keras.layers.Dense(
+				1164,
+				activation='relu'
+			)
+		)
+		ret_model.add(
+			tf.keras.layers.Dense(
+				100,
+				activation='relu'
+			)
+		)
+		ret_model.add(
+			tf.keras.layers.Dense(
+				50,
+				activation='relu'
+			)
+		)
+		ret_model.add(
+			tf.keras.layers.Dense(
+				10,
+				activation='relu'
+			)
+		)
+		ret_model.add(
+			tf.keras.layers.Dense(2)
+		)
 
-		# Add the fully-connected layers
-		x = tf.keras.layers.Flatten(name='flatten')(output_vgg16_conv)
-		x = tf.keras.layers.Dense(1164, activation='relu', name='fc1')(x)
-		x = tf.keras.layers.Dense(100, activation='relu', name='fc2')(x)
-		x = tf.keras.layers.Dense(50, activation='relu', name='fc3')(x)
-		x = tf.keras.layers.Dense(10, activation='relu', name='fc4')(x)
-		x = tf.keras.layers.Dense(2, activation='linear', name='output')(x)
-
-		my_model = tf.keras.Model(inputs=input, outputs=x)
-
-		for layer in my_model.layers[:15]:
-			layer.trainable = False
-
-		my_model.summary()
-		return my_model
-
-	@staticmethod
-	def compile_model(model):
-		adam = tf.keras.optimizers.Adam(LEARNING_RATE)
-		model.compile(loss=tf.keras.losses.mean_squared_error, optimizer=adam)
-		return model
-
-	@staticmethod
-	def load_weights(model, filename):
-		model.load_weights(filename)
-		return model
+		ret_model.summary()
+		return ret_model
