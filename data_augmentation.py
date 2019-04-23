@@ -4,6 +4,7 @@ import os
 import logging
 
 from config import CENTER_CAMERA_NAME, LEFT_CAMERA_NAME, RIGHT_CAMERA_NAME
+import pandas as pd
 
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 64, 200, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
@@ -11,7 +12,6 @@ INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 RANDOM_IMAGE_FLIP_PROBABILITY = 0.5
 RANDOM_IMAGE_NOISE_PROBABILITY = 0.2
 IMAGE_NOISE_TYPE = 's&p'
-
 
 # Source of the code is based on an excelent piece code from stackoverflow
 # http://stackoverflow.com/questions/22937589/how-to-add-noise-gaussian-salt-and-pepper-etc-to-image-in-python-with-opencv
@@ -143,30 +143,84 @@ def load_images(directory_path, frame):
 def get_acceleration(acceleration, braking):
 	return acceleration - braking # we can not have both values different 0. So we get either acceleration either -breaking, range[-1, 1]
 
+
 def normalize_colors(img):
 	return img / 127.5 - 1.0
 
-def print_batch_information(steers):
-	left_count = 0
-	right_count = 0
-	straight_count = 0
-	total = len(steers)
 
-	for steer in steers:
-		if steer > 0.2:
-			right_count += 1
-		elif steer < 0.2:
-			left_count += 1
-		else:
-			straight_count += 1
+def tmp_name(row, is_training, images, steers, i):
+	# frame = row['frame']
+	# steering_angle = row['steering']
+	# acceleration = row['throttle']
+	# braking = row['brake']
+	# data_dir = row['data_dir']
 
-	logging.info("total: {}, left: {}, right: {}, straight: {}".format(total, left_count, right_count, straight_count))
+	frame, steering_angle, acceleration, braking, data_dir = row
+	acceleration_brake_val = get_acceleration(acceleration, braking)
+	# argumentation
+	if is_training:
+		center, left, right = load_images(data_dir, frame)
+		image, steering_angle = choose_image(center, left, right, steering_angle)
+	else:
+		image = load_image(data_dir, CENTER_CAMERA_NAME.format(frame))
+
+	# add the image and steering angle to the batch
+	images[i] = normalize_colors(image)
+	steers[i, 0] = steering_angle
+	steers[i, 1] = acceleration_brake_val
+
+
+def balanced_data_batch_generator(data, single_batch_size, is_training):
+	"""
+	Generates balanced data batch of size 3*single_batch_size
+	:param data: all data provided
+	:param single_batch_size: size of single data type, whole batch_size=3 * single_batch_size
+	:param is_training:
+	:return:
+	"""
+	images = np.empty([3 * single_batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
+	steers = np.empty([3 * single_batch_size, 2])
+
+	data_series = data
+	turn_offset = 0.05
+	s_left = data_series[data_series['steering'] <= -turn_offset]
+	s_right = data_series[data_series['steering'] >= turn_offset]
+	s_center = data_series[np.logical_and(data_series['steering'] > -turn_offset, data_series['steering'] < turn_offset)]
+
+	while True:
+		i = 0
+		for row in np.random.permutation(s_left):
+			# row = s_left[idx]
+			tmp_name(row, is_training, images, steers, i)
+
+			i += 1
+			if i == single_batch_size:
+				break
+
+		for row in np.random.permutation(s_right):
+			# row = s_right[idx]
+			tmp_name(row, is_training, images, steers, i)
+
+			i += 1
+			if i == 2 * single_batch_size:
+				break
+
+		for row in np.random.permutation(s_center):
+			# row = s_center[idx]
+			tmp_name(row, is_training, images, steers, i)
+
+			i += 1
+			if i == 3 * single_batch_size:
+				break
+
+		yield images, steers
+
 
 def batch_generator(data, batch_size, is_training):
 	images = np.empty([batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
 	steers = np.empty([batch_size, 2])
-
 	while True:
+		steering_directions_count = [0, 0, 0]
 		i = 0
 		for idx in np.random.permutation(len(data)):
 			row = data[idx]
@@ -174,23 +228,29 @@ def batch_generator(data, batch_size, is_training):
 			acceleration_brake_val = get_acceleration(acceleration, braking)
 
 			# argumentation
-			if is_training and np.random.rand() < 0.6:
+			if is_training:
 				center, left, right = load_images(data_dir, frame)
 				image, steering_angle = choose_image(center, left, right, steering_angle)
 			else:
 				image = load_image(data_dir, CENTER_CAMERA_NAME.format(frame))
 
+			image, steering_angle = augment(image, steering_angle)
+
+			if 0.1 > steering_angle > -0.1:
+				steering_directions_count[1] = steering_directions_count[1] + 1
+			elif steering_angle > 0:
+				steering_directions_count[2] = steering_directions_count[2] + 1
+			else:
+				steering_directions_count[0] = steering_directions_count[0] + 1
+
 			# add the image and steering angle to the batch
-			image = preprocess(image)
 			images[i] = normalize_colors(image)
-			# steers[i] = steering_angle
-			# accelerations[i] = acceleration_brake_val
 			steers[i, 0] = steering_angle
 			steers[i, 1] = acceleration_brake_val
 			i += 1
 			if i == batch_size:
 				break
-
+		logging.info("\nLeft: {}; Center: {}; Right: {};".format(steering_directions_count[0], steering_directions_count[1], steering_directions_count[2]))
 		yield images, steers
 
 
