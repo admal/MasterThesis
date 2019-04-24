@@ -1,18 +1,16 @@
 import argparse
-
-import math
-import tensorflow as tf
-import os
-import csv
 import logging
+import math
+import os
 
-from data_augmentation import batch_generator, balanced_data_batch_generator
-from neural_networks.InceptionV3Model import InceptionV3Model
-from neural_networks.NvidiaModel import NvidiaModel
-from neural_networks.VGG16Model import VGG16Model
-from config import MEASUREMENTS_CSV_FILENAME
-from sklearn.model_selection import train_test_split  # to split out training and testing data
 import pandas as pd
+import tensorflow as tf
+from sklearn.model_selection import train_test_split  # to split out training and testing data
+
+from config import MEASUREMENTS_CSV_FILENAME
+from data_augmentation import balanced_data_batch_generator
+from neural_networks.VGG16Model import VGG16Model
+from neural_networks.neural_networks_common import get_model, add_model_cmd_arg
 
 FORMAT = '%(asctime)-15s : %(message)s'
 
@@ -84,17 +82,6 @@ def load_data(test_size):
 	return train_data, valid_data
 
 
-def get_model(model_name):
-	if model_name == 'nvidia':
-		return NvidiaModel().model()
-	elif model_name == 'vgg':
-		return VGG16Model().model()
-	elif model_name == 'inception':
-		return InceptionV3Model().model()
-	else:
-		return None
-
-
 def main():
 	parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
 	parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0.1)
@@ -103,8 +90,7 @@ def main():
 	parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=150)
 	parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='true')
 	parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
-	parser.add_argument('-m', help='choose model to train (vgg, nvidia, inception)', dest='model',
-	                    choices=['vgg', 'nvidia', 'inception'], default='nvidia')
+	add_model_cmd_arg(parser)
 	args = parser.parse_args()
 
 	# print parameters

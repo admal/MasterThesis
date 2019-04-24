@@ -1,19 +1,17 @@
 import argparse
-import logging
 import datetime
-import random
+import logging
 import time
-import numpy as np
-import cv2
 
-from data_augmentation import preprocess
-from neural_networks.VGG16Model import VGG16Model
+import numpy as np
 
 from carla.client import make_carla_client, VehicleControl
 from carla.sensor import Camera
 from carla.settings import CarlaSettings
 from carla.tcp import TCPConnectionError
-from carla.util import print_over_same_line
+from data_augmentation import preprocess
+from neural_networks.ModelBase import ModelBase
+from neural_networks.neural_networks_common import add_model_cmd_arg, get_model
 
 
 def generate_settings(args):
@@ -49,7 +47,7 @@ def drive(args, model):
 		print("Starting episode...")
 		# Choose one player start at random.
 		number_of_player_starts = len(scene.player_start_spots)
-		player_start = 0# random.randint(0, max(0, number_of_player_starts - 1))
+		player_start = 0  # random.randint(0, max(0, number_of_player_starts - 1))
 		client.start_episode(player_start)
 		print("Start driving...")
 		while True:
@@ -71,10 +69,12 @@ def drive(args, model):
 			control.throttle = acceleration
 			client.send_control(control)
 
+
 def main(args):
-	print("Loading model...")
-	model = VGG16Model().model()
-	model = VGG16Model.load_weights(model, "trained_models\\vgg\\vgg-model-001.h5")
+	print("Loading model ({})...".format(args.model))
+
+	model = get_model(args.model)
+	model = ModelBase.load_weights(model, "trained_models\\{}\\{}-model-{:03d}.h5".format(args.model, args.model, args.checkpoint))
 
 	while True:
 		try:
@@ -111,5 +111,14 @@ if __name__ == '__main__':
 		type=lambda s: s.title(),
 		default='Epic',
 		help='graphics quality level, a lower level makes the simulation run considerably faster.')
+	add_model_cmd_arg(argparser)
+	argparser.add_argument(
+		'-c',
+		'--checkpoint',
+		dest='checkpoint',
+		type=int,
+		default=1,
+		help='number of model to load'
+	)
 	args = argparser.parse_args()
 	main(args)
