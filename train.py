@@ -26,13 +26,20 @@ def train_model(model, args, train_data, valid_data, model_name):
 	# made based on either the maximization or the minimization of the monitored quantity. For val_acc,
 	# this should be max, for val_loss this should be min, etc. In auto mode, the direction is automatically
 	# inferred from the name of the monitored quantity.
-	trained_out_dir = 'trained_models\\{}\\{}'.format(model_name, model_name)
-	checkpoint_name = trained_out_dir + '-model-{epoch:03d}.h5'
-	checkpoint = tf.keras.callbacks.ModelCheckpoint(checkpoint_name,
-	                                                monitor='val_loss',
-	                                                verbose=0,
-	                                                save_best_only=args.save_best_only,
-	                                                mode='auto')
+	model_trained_out_dir = 'trained_models\\{}'.format(model_name)
+	model_path_base = 'trained_models\\{}\\{}-model-'.format(model_name, model_name)
+	checkpoint_name = model_path_base + '{epoch:03d}.h5'
+	checkpoint = tf.keras.callbacks.ModelCheckpoint(
+		checkpoint_name,
+		monitor='val_loss',
+		verbose=0,
+		save_best_only=args.save_best_only,
+		mode='auto')
+
+	tensorboard_callback = tf.keras.callbacks.TensorBoard(
+		log_dir=model_trained_out_dir+"\\logs",
+		update_freq='epoch'
+	)
 
 	model.compile(loss='mean_squared_error', optimizer=tf.keras.optimizers.Adam(lr=args.learning_rate))
 
@@ -49,7 +56,7 @@ def train_model(model, args, train_data, valid_data, model_name):
 		max_queue_size=1,
 		validation_data=balanced_data_batch_generator(valid_data, args.batch_size, False),
 		validation_steps=len(valid_data),
-		callbacks=[checkpoint],
+		callbacks=[checkpoint, tensorboard_callback ],
 		verbose=2)
 
 

@@ -24,18 +24,6 @@ from gathering_data_common import generate_settings, generate_run_arguments, cre
 
 try:
 	import pygame
-	from pygame.locals import K_DOWN
-	from pygame.locals import K_LEFT
-	from pygame.locals import K_RIGHT
-	from pygame.locals import K_SPACE
-	from pygame.locals import K_UP
-	from pygame.locals import K_a
-	from pygame.locals import K_d
-	from pygame.locals import K_p
-	from pygame.locals import K_q
-	from pygame.locals import K_r
-	from pygame.locals import K_s
-	from pygame.locals import K_w
 except ImportError:
 	raise RuntimeError('cannot import pygame, make sure pygame package is installed')
 
@@ -75,8 +63,6 @@ class CarlaGame(object):
 		self.client = carla_client
 		self._carla_settings = get_settings_for_scene(args, sync_mode=False)
 		self._timer = None
-		self._is_on_reverse = False
-		self._agent_positions = None
 		self._current_joystick = None
 		self._out_directory = None
 		self._saved_frames = 0
@@ -125,7 +111,6 @@ class CarlaGame(object):
 		print('Starting new episode...')
 		self.client.start_episode(player_start)
 		self._timer = Timer()
-		self._is_on_reverse = False
 
 	def _on_loop(self, measurements_file, every_second):
 		self._timer.tick()
@@ -232,7 +217,6 @@ def main():
 
 
 if __name__ == '__main__':
-
 	try:
 		main()
 	except KeyboardInterrupt:
