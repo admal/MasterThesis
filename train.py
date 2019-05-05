@@ -14,6 +14,7 @@ from neural_networks.neural_networks_common import get_model, add_model_cmd_arg
 
 FORMAT = '%(asctime)-15s : %(message)s'
 
+#run: python train.py -m densenet -n 30 -b 50 -o true
 
 def train_model(model, args, train_data, valid_data, model_name):
 	"""

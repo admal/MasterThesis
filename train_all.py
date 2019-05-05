@@ -17,15 +17,17 @@ if __name__ == '__main__':
 
 	logging.info("Start training...")
 	train_script = "train.py"
-	epochs_count = 100
+	epochs_count = 30
 	for net in nets:
 		logging.info("Start training {} net (epochs: {})".format(net, epochs_count))
 		pid = subprocess.Popen(
 			[
+				"python",
 				train_script,
-				"-n " + str(epochs_count),
-				"-b " + str(batches[net]),
-				"-o true"]
+				"-m", net,
+				"-n", str(epochs_count),
+				"-b", str(batches[net]),
+				"-o", "true"]
 		)
 		pid.wait()
 		logging.info("Finished training {}".format(net))
