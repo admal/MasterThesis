@@ -114,6 +114,10 @@ class CarlaGame(object):
 		self._is_on_reverse = False
 		self._is_manual = False
 		self._model = model
+		self._velocities = []
+		self._intervention_times = []
+		self._current_intervention_start_time = None
+		self._run_start_time = None
 
 	def execute(self):
 		"""Launch the PyGame."""
@@ -148,6 +152,7 @@ class CarlaGame(object):
 		self._timer = Timer()
 		self._is_on_reverse = False
 		self._is_manual = False
+		self._run_start_time = time.time()
 
 	def _on_loop(self):
 		self._timer.tick()
@@ -158,6 +163,8 @@ class CarlaGame(object):
 		if self._is_manual:
 			self.client.send_control(control)
 		else:
+			self._velocities.append(measurements.player_measurements.forward_speed * 3.6) # convert to km/h
+
 			steer = 0.0
 			acceleration = 0.0
 			for name, measurement in sensor_data.items():
@@ -195,18 +202,25 @@ class CarlaGame(object):
 			control.hand_brake = True
 		if keys[K_t]:
 			self._is_manual = not self._is_manual
+			if self._is_manual:
+				self._current_intervention_start_time = time.time()
+			if not self._is_manual and self._current_intervention_start_time is not None:
+				self._intervention_times.append(time.time() - self._current_intervention_start_time)
+				self._current_intervention_start_time = None
 		if keys[K_q]:
 			self._is_on_reverse = not self._is_on_reverse
 		control.reverse = self._is_on_reverse
 		return control
 
 	def _print_player_measurements(self, control):
-		logging.info("[Is manual: {}]: steer: {}, throttle: {}".format(
+		logging.info("[Is manual: {}]: steer: {:.2f}, throttle: {:.2f}, interventions time: {:.2f}s, avg speed: {:.2f}km/h"
+			.format(
 			self._is_manual,
 			control.steer,
-			control.throttle
+			control.throttle,
+			np.sum(self._intervention_times),
+			np.average(self._velocities)
 		))
-		pass
 
 	def _on_render(self):
 		if self._main_image is not None:
