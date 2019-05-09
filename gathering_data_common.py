@@ -92,12 +92,8 @@ def generate_settings(args, sync_mode=True):
 
 
 def get_settings_for_scene(args, sync_mode=True):
-	if args.settings_filepath is None:
-		settings = generate_settings(args, sync_mode)
-		add_cameras(settings)
-	else:
-		with open(args.settings_filepath, 'r') as fp:
-			settings = fp.read()
+	settings = generate_settings(args, sync_mode)
+	add_cameras(settings)
 	return settings
 
 
@@ -130,12 +126,6 @@ def generate_run_arguments():
 		type=lambda s: s.title(),
 		default='Epic',
 		help='graphics quality level, a lower level makes the simulation run considerably faster.')
-	argparser.add_argument(
-		'-c', '--carla-settings',
-		metavar='PATH',
-		dest='settings_filepath',
-		default=None,
-		help='Path to a "CarlaSettings.ini" file')
 	argparser.add_argument(
 		'-f', '--frames',
 		type=int,

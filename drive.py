@@ -21,7 +21,7 @@ def generate_settings(args):
 		SendNonPlayerAgentsInfo=False,
 		NumberOfVehicles=0,
 		NumberOfPedestrians=0,
-		WeatherId=1,
+		WeatherId=args.weather,
 		QualityLevel=args.quality_level)
 	settings.randomize_seeds()
 
@@ -111,6 +111,12 @@ if __name__ == '__main__':
 		type=lambda s: s.title(),
 		default='Epic',
 		help='graphics quality level, a lower level makes the simulation run considerably faster.')
+	argparser.add_argument(
+		'-w', '--weather',
+		type=int,
+		default=0,
+		help='weather preset'
+	)
 	add_model_cmd_arg(argparser)
 	argparser.add_argument(
 		'-c',
