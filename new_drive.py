@@ -212,14 +212,24 @@ class CarlaGame(object):
 		control.reverse = self._is_on_reverse
 		return control
 
+	def _calc_intervention_rate(self):
+		all = time.time() - self._run_start_time
+		intervention = sum(self._intervention_times)
+		return intervention / all
+
 	def _print_player_measurements(self, control):
-		logging.info("[Is manual: {}]: steer: {:.2f}, throttle: {:.2f}, interventions time: {:.2f}s, avg speed: {:.2f}km/h"
+		msg = "[Is manual: {}]: "
+		msg += " steer: {:.2f}, throttle: {:.2f}, "
+		msg += "interventions time: {:.2f}s, avg speed: {:.2f}km/h "
+		msg += "intervention rate: {:.2f}"
+		logging.info(msg
 			.format(
 			self._is_manual,
 			control.steer,
 			control.throttle,
 			np.sum(self._intervention_times),
-			np.average(self._velocities)
+			np.average(self._velocities),
+			self._calc_intervention_rate()
 		))
 
 	def _on_render(self):
