@@ -5,14 +5,14 @@ import tensorflow as tf
 
 class DenseNetModel(ModelBase):
 	def model(self):
-		xception = tf.keras.applications.densenet.DenseNet121(
+		densenet = tf.keras.applications.densenet.DenseNet121(
 			weights='imagenet',
 			include_top=False,
 			input_shape=INPUT_SHAPE
 		)
 
 		ret_model = tf.keras.models.Sequential()
-		ret_model.add(xception)
+		ret_model.add(densenet)
 		ret_model.add(
 			tf.keras.layers.Flatten()
 		)
@@ -23,16 +23,25 @@ class DenseNetModel(ModelBase):
 			)
 		)
 		ret_model.add(
+			tf.keras.layers.Dropout(0.5)
+		)
+		ret_model.add(
 			tf.keras.layers.Dense(
 				100,
 				activation='relu'
 			)
 		)
 		ret_model.add(
+			tf.keras.layers.Dropout(0.5)
+		)
+		ret_model.add(
 			tf.keras.layers.Dense(
 				50,
 				activation='relu'
 			)
+		)
+		ret_model.add(
+			tf.keras.layers.Dropout(0.5)
 		)
 		ret_model.add(
 			tf.keras.layers.Dense(
