@@ -32,6 +32,8 @@ from carla.settings import CarlaSettings
 from data_augmentation import preprocess
 from neural_networks.ModelBase import ModelBase
 from neural_networks.neural_networks_common import add_model_cmd_arg, get_model
+from common import *
+from tests.common import evaluate_run, save_run
 
 try:
 	import pygame
@@ -114,22 +116,35 @@ class CarlaGame(object):
 		self._is_on_reverse = False
 		self._is_manual = False
 		self._model = model
+		self._model_name = args.model
+		self._map_name = args.map_name
+		self._checkpoint = args.checkpoint
 		self._velocities = []
 		self._intervention_times = []
 		self._current_intervention_start_time = None
 		self._run_start_time = None
+
+	def save_result(self):
+		run_dir = save_run(self.points_x, self.points_y, self._model_name, self._map_name)
+		evaluate_run(run_dir, self._map_name, self._model_name, self._checkpoint)
 
 	def execute(self):
 		"""Launch the PyGame."""
 		pygame.init()
 		self._initialize_game()
 		try:
+			frame = 0
 			while True:
 				for event in pygame.event.get():
 					if event.type == pygame.QUIT:
+						self.save_result()
 						return
-				self._on_loop()
+				frame = frame + 1
+				is_ok = self._on_loop(frame)
 				self._on_render()
+				if not is_ok:
+					self.save_result()
+					break
 		finally:
 			pygame.quit()
 
@@ -153,10 +168,14 @@ class CarlaGame(object):
 		self._is_on_reverse = False
 		self._is_manual = False
 		self._run_start_time = time.time()
+		self.line_points = []
+		self.points_x = []
+		self.points_y = []
 
-	def _on_loop(self):
+	def _on_loop(self, frame):
 		self._timer.tick()
 
+		skip_frames = 80
 		measurements, sensor_data = self.client.read_data()
 		control = self._get_keyboard_control(pygame.key.get_pressed())
 
@@ -180,9 +199,35 @@ class CarlaGame(object):
 			control.throttle = acceleration
 			self.client.send_control(control)
 
+			if frame < skip_frames:
+				logging.info("Skipping first {} frames...".format(skip_frames))
+				return True
+
+			current_position = vec3tovec2(measurements.player_measurements.transform.location)
+			if len(self.line_points) > 1:
+				dist_from_start = distance(self.line_points[0], current_position)
+			else:
+				dist_from_start = 10000
+
+			if dist_from_start < 0.5:
+				logging.info("Position: {} is already logged".format(current_position))
+				return False
+
+
+			self.line_points.append(current_position)
+			self.points_x.append(current_position[0])
+			self.points_y.append(current_position[1])
+			logging.info("Add point: [{:.4f},{:.4f}], points count: {:0>4d}, distance from start: {:.4f}".format(
+				current_position[0],
+				current_position[1],
+				len(self.line_points),
+				dist_from_start))
+
 		if self._timer.elapsed_seconds_since_lap() > 0.5:
 			self._print_player_measurements(control)
 			self._timer.lap()
+
+		return True
 
 	def _get_keyboard_control(self, keys):
 		"""
@@ -290,6 +335,12 @@ def main():
 		type=int,
 		default=1,
 		help='number of model\'s checkpoint to load'
+	)
+	argparser.add_argument(
+		'-t',
+		'--map_name',
+		default='TestTown',
+		choices=['TestTown', 'Town03', 'Town04']
 	)
 	args = argparser.parse_args()
 

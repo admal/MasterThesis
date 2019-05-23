@@ -14,7 +14,8 @@ from neural_networks.neural_networks_common import get_model, add_model_cmd_arg
 
 FORMAT = '%(asctime)-15s : %(message)s'
 
-#run: python train.py -m densenet -n 30 -b 50 -o true
+
+# run: python train.py -m densenet -n 30 -b 50 -o true
 
 def train_model(model, args, train_data, valid_data, model_name):
 	"""
@@ -38,7 +39,7 @@ def train_model(model, args, train_data, valid_data, model_name):
 		mode='auto')
 
 	tensorboard_callback = tf.keras.callbacks.TensorBoard(
-		log_dir=model_trained_out_dir+"\\logs",
+		log_dir=model_trained_out_dir + "\\logs",
 		update_freq='epoch'
 	)
 
@@ -57,7 +58,7 @@ def train_model(model, args, train_data, valid_data, model_name):
 		max_queue_size=1,
 		validation_data=balanced_data_batch_generator(valid_data, args.batch_size, False),
 		validation_steps=len(valid_data),
-		callbacks=[checkpoint, tensorboard_callback ],
+		callbacks=[checkpoint, tensorboard_callback],
 		verbose=2)
 
 
@@ -114,9 +115,9 @@ def main():
 	# build model
 	logging.info("Loading neural network model: {}".format(args.model))
 	model = get_model(args.model)
-	compiled_model = VGG16Model.compile_model(model)
+	# compiled_model = VGG16Model.compile_model(model)
 	# train model on data, it saves as model.h5
-	train_model(compiled_model, args, *data, args.model)
+	train_model(model, args, *data, args.model)
 
 
 if __name__ == '__main__':

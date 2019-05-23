@@ -71,6 +71,18 @@ def start_gathering_data(args, out_directory):
 
 def main():
 	argparser = generate_run_arguments()
+	argparser.add_argument(
+		'-f', '--frames',
+		type=int,
+		default=1000,
+		help='number of frames to be saved (default: 1000)'
+	)
+	argparser.add_argument(
+		'-s', '--skip_frames',
+		type=int,
+		default=10,
+		help='save screen every skip_frames'
+	)
 	args = argparser.parse_args()
 	log_level = logging.DEBUG if args.debug else logging.INFO
 	logging.basicConfig(level=log_level)

@@ -4,6 +4,7 @@ from config import LEARNING_RATE
 
 
 class ModelBase:
+	# TODO: TO REMOVE I THINK
 	@staticmethod
 	def compile_model(model):
 		adam = tf.keras.optimizers.Adam(LEARNING_RATE)
