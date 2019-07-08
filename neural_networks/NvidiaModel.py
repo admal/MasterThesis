@@ -63,26 +63,16 @@ class NvidiaModel(ModelBase):
 			)
 		)
 		model.add(
-			tf.keras.layers.Dropout(0.5)
-		)
-		model.add(
 			tf.keras.layers.Dense(
 				100,
 				activation='relu'
 			)
 		)
 		model.add(
-			tf.keras.layers.Dropout(0.5)
-		)
-		model.add(
 			tf.keras.layers.Dense(
 				50,
 				activation='relu'
-			)
-		)
-		model.add(
-			tf.keras.layers.Dropout(0.5)
-		)
+			))
 		model.add(
 			tf.keras.layers.Dense(
 				10,

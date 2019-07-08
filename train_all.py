@@ -3,7 +3,7 @@ import logging
 import time
 
 FORMAT = '%(asctime)-15s : %(message)s'
-nets = ["nvidia", "densenet", "resnet", "vgg"]
+nets = ["vgg", "resnet", "densenet"]
 batches = {
 	"nvidia": 150,
 	"densenet": 50,
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
 	logging.info("Start training...")
 	train_script = "train.py"
-	epochs_count = 30
+	epochs_count = 10
 	for net in nets:
 		logging.info("Start training {} net (epochs: {})".format(net, epochs_count))
 		pid = subprocess.Popen(

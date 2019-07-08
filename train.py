@@ -9,15 +9,15 @@ from sklearn.model_selection import train_test_split  # to split out training an
 
 from config import MEASUREMENTS_CSV_FILENAME
 from data_augmentation import balanced_data_batch_generator
-from neural_networks.VGG16Model import VGG16Model
-from neural_networks.neural_networks_common import get_model, add_model_cmd_arg
+from neural_networks.neural_networks_common import get_empty_model, add_model_cmd_arg, load_model
+from neural_networks import TrainValTensorBoardCallback
 
 FORMAT = '%(asctime)-15s : %(message)s'
 
 
-# run: python train.py -m densenet -n 30 -b 50 -o true
+# run: python train.py -m nvidia -n 30 -b 50 -o true -r True -c 20
 
-def train_model(model, args, train_data, valid_data, model_name):
+def train_model(model, args, train_data, valid_data, model_name, from_epoch=0):
 	"""
 	Train the model
 	"""
@@ -38,12 +38,12 @@ def train_model(model, args, train_data, valid_data, model_name):
 		save_best_only=args.save_best_only,
 		mode='auto')
 
-	tensorboard_callback = tf.keras.callbacks.TensorBoard(
+	tensorboard_callback = TrainValTensorBoardCallback.TrainValTensorBoard(
 		log_dir=model_trained_out_dir + "\\logs",
 		update_freq='epoch'
 	)
 
-	model.compile(loss='mean_squared_error', optimizer=tf.keras.optimizers.Adam(lr=args.learning_rate))
+	model.compile(loss='mean_squared_error', optimizer=tf.keras.optimizers.Adam(lr=args.learning_rate), metrics=['accuracy'])
 
 	# Fits the model on data generated batch-by-batch by a Python generator.
 
@@ -54,12 +54,14 @@ def train_model(model, args, train_data, valid_data, model_name):
 	model.fit_generator(
 		generator=balanced_data_batch_generator(train_data, args.batch_size, True),
 		steps_per_epoch=math.ceil(len(train_data) / (args.batch_size)),
-		epochs=args.nb_epoch,
+		epochs=args.nb_epoch + from_epoch,
 		max_queue_size=1,
 		validation_data=balanced_data_batch_generator(valid_data, args.batch_size, False),
 		validation_steps=len(valid_data),
 		callbacks=[checkpoint, tensorboard_callback],
-		verbose=2)
+		verbose=2,
+		initial_epoch=from_epoch
+	)
 
 
 # for command line args
@@ -72,7 +74,7 @@ def s2b(s):
 
 
 def load_data(test_size):
-	directory = ".\\out"
+	directory = ".\\out\\data"
 	logging.info("Start loading data")
 	data = []
 	for dir in os.walk(directory):
@@ -94,11 +96,12 @@ def load_data(test_size):
 def main():
 	parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
 	parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0.1)
-	parser.add_argument('-k', help='drop out probability', dest='keep_prob', type=float, default=0.5)
 	parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=10)
 	parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=150)
 	parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='true')
 	parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
+	parser.add_argument('-r', '--resume', help='resume training from checkpoint', type=s2b, default='false')
+	parser.add_argument('-c', '--checkpoint', help='checkpoint number to resume training from', type=int, default=0)
 	add_model_cmd_arg(parser)
 	args = parser.parse_args()
 
@@ -114,10 +117,14 @@ def main():
 	data = load_data(args.test_size)
 	# build model
 	logging.info("Loading neural network model: {}".format(args.model))
-	model = get_model(args.model)
-	# compiled_model = VGG16Model.compile_model(model)
+
+	if not args.resume:
+		model = get_empty_model(args.model)
+	else:
+		model = load_model(args.model, args.checkpoint)
+
 	# train model on data, it saves as model.h5
-	train_model(model, args, *data, args.model)
+	train_model(model, args, *data, args.model, args.checkpoint)
 
 
 if __name__ == '__main__':

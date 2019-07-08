@@ -1,10 +1,11 @@
 from neural_networks.DenseNetModel import DenseNetModel
+from neural_networks.ModelBase import ModelBase
 from neural_networks.NvidiaModel import NvidiaModel
 from neural_networks.ResNet50Model import ResNet50Model
 from neural_networks.VGG16Model import VGG16Model
 
 
-def get_model(model_name):
+def get_empty_model(model_name):
 	if model_name == 'nvidia':
 		return NvidiaModel().model()
 	elif model_name == 'vgg':
@@ -23,3 +24,14 @@ def add_model_cmd_arg(parser):
 	                    dest='model',
 	                    choices=['vgg', 'nvidia', 'resnet', 'densenet'],
 	                    default='nvidia')
+
+
+def load_model(model_name, checkpoint):
+	print("Loading model ({})...".format(model_name))
+
+	model = get_empty_model(model_name)
+	model = ModelBase.load_weights(
+		model,
+		"trained_models\\{}\\{}-model-{:03d}.h5"
+			.format(model_name, model_name, checkpoint))
+	return model

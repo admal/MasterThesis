@@ -26,9 +26,10 @@ weather_presets = {
 }
 
 autopilot_maps = [
-	'/Game/Maps/Town01',
-	'/Game/Maps/Town02'
-	# '/Game/Maps/Town04'
+	# '/Game/Maps/Town01',
+	# '/Game/Maps/Town02'
+	'/Game/Maps/Town04',
+	'/Game/Maps/Town03'
 ]
 
 
@@ -52,8 +53,8 @@ if __name__ == '__main__':
 	log("Start gathering data...")
 
 	frames_count = 1000
-	config_file = 'C:\\Carla\\builds\\build1\\WindowsNoEditor\\CarlaSettings.ini'
-	carla_server_file = 'C:\\Carla\\builds\\build1\\WindowsNoEditor\\CarlaUE4.exe'
+	config_file = 'C:\\Carla\\builds\\build3\\WindowsNoEditor\\CarlaSettings.ini'
+	carla_server_file = 'C:\\Carla\\builds\\build6\\WindowsNoEditor\\CarlaUE4.exe'
 	gather_data_file = "C:\\Users\\Adam\\Documents\\Materialy_pw\\PW\\Magisterka\\AutonomousCarProject\\gather_data.py"
 
 	log("frames_count: {}; config file: {}; carla file: {};".format(frames_count, config_file, carla_server_file))
@@ -64,7 +65,7 @@ if __name__ == '__main__':
 		carla_pid = subprocess.Popen(
 			[carla_server_file, autopilot_map, "-carla-settings=" + config_file, "-ResX=800", "-ResY=600", "-windowed", "-carla-server"])
 
-		for weather in range(14):
+		for weather in range(0, 15):
 			log("Start gathering data map: {}; weather: {}".format(autopilot_map, weather_presets[weather]))
 			# parameters = "-f {} -w {} -v".format(frames_count, weather)
 			data_pid = subprocess.Popen(

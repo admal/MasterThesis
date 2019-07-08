@@ -113,9 +113,9 @@ def choose_image(center, left, right, angle):
 	if chosen == 0:
 		return center, angle
 	if chosen == 1:
-		return left, angle - 0.2
+		return left, angle + 0.2
 	if chosen == 2:
-		return right, angle + 0.2
+		return right, angle - 0.2
 
 
 def preprocess(img):

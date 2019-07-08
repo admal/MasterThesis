@@ -68,7 +68,7 @@ def main():
 	argparser = generate_run_arguments()
 	argparser.add_argument(
 		'-m', '--map',
-		choices=['Town01', 'Town02', 'Town03', 'Town04', 'TestTown'],
+		choices=['Town01', 'Town02', 'Town03', 'Town04', 'TestTown', 'TestTown02', 'TestTown03'],
 		default='Town01',
 		help='The name of town for which race line is created (filename will be created with that name)'
 	)

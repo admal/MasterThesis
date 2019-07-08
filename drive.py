@@ -11,7 +11,7 @@ from carla.settings import CarlaSettings
 from carla.tcp import TCPConnectionError
 from data_augmentation import preprocess
 from neural_networks.ModelBase import ModelBase
-from neural_networks.neural_networks_common import add_model_cmd_arg, get_model
+from neural_networks.neural_networks_common import add_model_cmd_arg, get_empty_model
 
 
 def generate_settings(args):
@@ -73,7 +73,7 @@ def drive(args, model):
 def main(args):
 	print("Loading model ({})...".format(args.model))
 
-	model = get_model(args.model)
+	model = get_empty_model(args.model)
 	model = ModelBase.load_weights(model, "trained_models\\{}\\{}-model-{:03d}.h5".format(args.model, args.model, args.checkpoint))
 
 	while True:

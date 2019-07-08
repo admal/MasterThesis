@@ -14,7 +14,7 @@ run_image_name = '{}.png'
 result_name = 'result.txt'
 
 
-def evaluate_run(run_dir, map_name, model_name='', checkpoint=0):
+def evaluate_run(run_dir, map_name, velocities, model_name='', checkpoint=0, weather=0):
 	reference_csv = reference_dir + '{}\\{}.csv'.format(map_name, map_name)
 	reference_points = pd.read_csv(reference_csv, dtype={'x': float, 'y': float})
 
@@ -25,8 +25,9 @@ def evaluate_run(run_dir, map_name, model_name='', checkpoint=0):
 	stacked_run = np.column_stack((run_points['x'], run_points['y']))
 
 	dist = compare(stacked_reference, stacked_run)
+	avg_speed = np.average(velocities)
 	f = open(os.path.join(run_dir, result_name), 'w')
-	f.write('Run results\n==============\nmodel: {} epoch: {}\nResult:{}'.format(model_name, checkpoint, dist))
+	f.write('Run results\n==============\nmodel: {} epoch: {} weather: {}\nResult:{}\nAvg speed: {:.2f}km/h'.format(model_name, checkpoint, weather, dist, avg_speed))
 	f.close()
 
 	if model_name == '' or checkpoint == 0:
@@ -35,7 +36,7 @@ def evaluate_run(run_dir, map_name, model_name='', checkpoint=0):
 
 def compare(line1, line2):
 	logging.info('Start DTW algorithm...')
-	distance, _ = fastdtw(line1, line2, dist=euclidean)
+	distance, _ = fastdtw(line1, line2, dist=euclidean, radius=10)
 	logging.info('DTW algorithm finished. Final score: {}'.format(distance))
 	return distance
 

@@ -11,6 +11,19 @@ class VGG16Model(ModelBase):
 			include_top=False,
 			input_shape=INPUT_SHAPE
 		)
+		# layers_count = len(model_vgg16_conv.layers)
+		# for layer in model_vgg16_conv.layers[ :int(layers_count/2)]:
+		# 	layer.trainable = False
+
+		model_vgg16_conv.trainable = True
+		set_trainable = False
+		for layer in model_vgg16_conv.layers:
+			if layer.name in ['block5_conv1', 'block4_conv1']:
+				set_trainable = True
+			if set_trainable:
+				layer.trainable = True
+			else:
+				layer.trainable = False
 
 		ret_model = tf.keras.models.Sequential()
 		ret_model.add(model_vgg16_conv)
@@ -24,16 +37,25 @@ class VGG16Model(ModelBase):
 			)
 		)
 		ret_model.add(
+			tf.keras.layers.Dropout(0.5)
+		)
+		ret_model.add(
 			tf.keras.layers.Dense(
 				100,
 				activation='relu'
 			)
 		)
 		ret_model.add(
+			tf.keras.layers.Dropout(0.5)
+		)
+		ret_model.add(
 			tf.keras.layers.Dense(
 				50,
 				activation='relu'
 			)
+		)
+		ret_model.add(
+			tf.keras.layers.Dropout(0.2)
 		)
 		ret_model.add(
 			tf.keras.layers.Dense(

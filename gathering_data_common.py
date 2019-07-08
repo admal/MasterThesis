@@ -32,7 +32,7 @@ def save_run_config(directory, args):
 
 
 def create_out_directory():
-	out_directory = '.\\out\\{}'.format(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+	out_directory = '.\\out\\data\\{}'.format(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
 	os.makedirs(out_directory)
 	return out_directory
 

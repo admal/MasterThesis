@@ -31,7 +31,7 @@ from carla.sensor import Camera
 from carla.settings import CarlaSettings
 from data_augmentation import preprocess
 from neural_networks.ModelBase import ModelBase
-from neural_networks.neural_networks_common import add_model_cmd_arg, get_model
+from neural_networks.neural_networks_common import add_model_cmd_arg, get_empty_model, load_model
 from common import *
 from tests.common import evaluate_run, save_run
 
@@ -123,10 +123,11 @@ class CarlaGame(object):
 		self._intervention_times = []
 		self._current_intervention_start_time = None
 		self._run_start_time = None
+		self._weather = args.weather
 
 	def save_result(self):
 		run_dir = save_run(self.points_x, self.points_y, self._model_name, self._map_name)
-		evaluate_run(run_dir, self._map_name, self._model_name, self._checkpoint)
+		evaluate_run(run_dir, self._map_name, self._velocities, self._model_name, self._checkpoint, self._weather)
 
 	def execute(self):
 		"""Launch the PyGame."""
@@ -158,7 +159,6 @@ class CarlaGame(object):
 
 	def _on_new_episode(self):
 		self._carla_settings.randomize_seeds()
-		self._carla_settings.randomize_weather()
 		scene = self.client.load_settings(self._carla_settings)
 		number_of_player_starts = len(scene.player_start_spots)
 		player_start = np.random.randint(number_of_player_starts)
@@ -179,6 +179,7 @@ class CarlaGame(object):
 		measurements, sensor_data = self.client.read_data()
 		control = self._get_keyboard_control(pygame.key.get_pressed())
 
+		current_position = vec3tovec2(measurements.player_measurements.transform.location)
 		if self._is_manual:
 			self.client.send_control(control)
 		else:
@@ -198,33 +199,31 @@ class CarlaGame(object):
 			control.steer = steer
 			control.throttle = acceleration
 			self.client.send_control(control)
-
 			if frame < skip_frames:
 				logging.info("Skipping first {} frames...".format(skip_frames))
 				return True
 
-			current_position = vec3tovec2(measurements.player_measurements.transform.location)
-			if len(self.line_points) > 1:
-				dist_from_start = distance(self.line_points[0], current_position)
-			else:
-				dist_from_start = 10000
-
-			if dist_from_start < 0.5:
-				logging.info("Position: {} is already logged".format(current_position))
-				return False
-
-
 			self.line_points.append(current_position)
 			self.points_x.append(current_position[0])
 			self.points_y.append(current_position[1])
+
+
+		if len(self.line_points) > 1:
+			dist_from_start = distance(self.line_points[0], current_position)
+		else:
+			dist_from_start = 10000
+
+		if dist_from_start < 1 and frame > skip_frames + 20:
+			logging.info("Position: {} is already logged".format(current_position))
+			return False
+
+		if self._timer.elapsed_seconds_since_lap() > 0.5:
+			self._print_player_measurements(control)
 			logging.info("Add point: [{:.4f},{:.4f}], points count: {:0>4d}, distance from start: {:.4f}".format(
 				current_position[0],
 				current_position[1],
 				len(self.line_points),
 				dist_from_start))
-
-		if self._timer.elapsed_seconds_since_lap() > 0.5:
-			self._print_player_measurements(control)
 			self._timer.lap()
 
 		return True
@@ -286,15 +285,7 @@ class CarlaGame(object):
 		pygame.display.flip()
 
 
-def load_model(args):
-	print("Loading model ({})...".format(args.model))
 
-	model = get_model(args.model)
-	model = ModelBase.load_weights(
-		model,
-		"trained_models\\{}\\{}-model-{:03d}.h5"
-			.format(args.model, args.model,args.checkpoint))
-	return model
 
 def main():
 	argparser = argparse.ArgumentParser(
@@ -340,7 +331,7 @@ def main():
 		'-t',
 		'--map_name',
 		default='TestTown',
-		choices=['TestTown', 'Town03', 'Town04']
+		choices=['TestTown', 'Town03', 'Town04', 'TestTown02', 'TestTown03']
 	)
 	args = argparser.parse_args()
 
@@ -351,7 +342,7 @@ def main():
 
 	print(__doc__)
 
-	model = load_model(args)
+	model = load_model(args.model, args.checkpoint)
 
 	while True:
 		try:
