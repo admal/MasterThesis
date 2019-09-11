@@ -8,12 +8,11 @@ from config import MEASUREMENTS_CSV_FILENAME
 
 
 def describe():
-	directory = ".\\out"
+	directory = ".\\out\\data"
 	logging.info("Start loading data")
 	steerings = []
 	throttles = []
 	dir_count = 0
-	last_automatic_dir_name = ".\\out\\20190402210820"
 	for dir in os.walk(directory):
 		if dir[0] == directory:
 			continue
@@ -34,8 +33,6 @@ def describe():
 		l_center = ss[np.logical_and(ss > -0.05, ss < 0.05)]
 
 		print("{}; Right: {}; Center: {}; Left: {}; ".format(dir[0], len(l_right), len(l_center), len(l_left)))
-		if dir[0] == last_automatic_dir_name:
-			print("======================MANUAL DATA======================")
 
 	print("Directories count: {}".format(dir_count))
 	print("Data count: {}".format(len(steerings)))

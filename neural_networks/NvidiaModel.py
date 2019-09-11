@@ -5,11 +5,8 @@ from neural_networks.ModelBase import ModelBase
 
 
 class NvidiaModel(ModelBase):
-	def model(self):
-		# input = tf.keras.layers.Input(INPUT_SHAPE, name='image_input')
+	def model(self, fine_tuning):
 		model = tf.keras.Sequential()
-
-		# model.add(input)
 
 		model.add(
 			tf.keras.layers.Conv2D(

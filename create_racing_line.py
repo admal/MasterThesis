@@ -1,6 +1,8 @@
 import logging
 from carla.client import make_carla_client
 import matplotlib.pyplot as plt
+
+from config import USE_SPEED_CONSTRAINTS, MINIMAL_SPEED, MAXIMAL_SPEED
 from gathering_data_common import generate_run_arguments, get_settings_for_scene
 import pandas as pd
 from common import *
@@ -29,16 +31,6 @@ def start(args):
 				client.send_control(control)
 				continue
 
-			# if car is standing than data is ignored
-			if measurements.player_measurements.forward_speed <= 0.1 and measurements.player_measurements.autopilot_control.throttle == 0:
-				if not written_info_stop:
-					written_info_stop = True
-					logging.info("Car is stopped, stop gathering data...")
-				control = measurements.player_measurements.autopilot_control
-				client.send_control(control)
-				continue
-
-			written_info_stop = False
 			current_position = vec3tovec2(measurements.player_measurements.transform.location)
 			if len(line_points) > 1:
 				dist_from_start = distance(line_points[0], current_position)
@@ -48,8 +40,6 @@ def start(args):
 			if dist_from_start < 0.5:
 				logging.info("Position: {} is already logged".format(current_position))
 				break
-
-
 
 			line_points.append(current_position)
 			points_x.append(current_position[0])
@@ -61,6 +51,15 @@ def start(args):
 				dist_from_start))
 
 			control = measurements.player_measurements.autopilot_control
+
+			if USE_SPEED_CONSTRAINTS:
+				if measurements.player_measurements.forward_speed * 3.6 < MINIMAL_SPEED:
+					acceleration = 0.7
+					control.throttle = acceleration
+				elif measurements.player_measurements.forward_speed * 3.6 > MAXIMAL_SPEED:
+					acceleration = 0
+					control.throttle = acceleration
+
 			client.send_control(control)
 
 
@@ -77,14 +76,12 @@ def main():
 	logging.basicConfig(level=log_level)
 	start(args)
 	df = pd.DataFrame({'x': points_x, 'y': points_y})
-	df.to_csv('out\\map_points\\' + args.map+'.csv', index=False)
+	df.to_csv('out\\map_points\\reference\\' + args.map + '\\' + args.map+'.csv', index=False)
 
 
 if __name__ == '__main__':
 	try:
 		main()
-
-
 		plt.plot(points_x, points_y, 'ro')
 		plt.scatter(points_x[0], points_y[0], s=1000, c='green')
 		plt.scatter(points_x[len(points_x) - 1], points_y[len(points_y) - 1], s=1000, c='blue')

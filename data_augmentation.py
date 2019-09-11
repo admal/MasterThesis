@@ -9,8 +9,6 @@ import pandas as pd
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 64, 200, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
 
-# TODO: remove probably that
-RANDOM_IMAGE_FLIP_PROBABILITY = 0.5
 RANDOM_IMAGE_NOISE_PROBABILITY = 0.2
 IMAGE_NOISE_TYPE = 's&p'
 
@@ -81,14 +79,6 @@ def resize(img):
 	return cv2.resize(img, (IMAGE_WIDTH, IMAGE_HEIGHT), cv2.INTER_AREA)
 
 
-# TODO: remove prob ably that
-def random_flip(img, angle):
-	if np.random.rand() < RANDOM_IMAGE_FLIP_PROBABILITY:
-		return cv2.flip(img, 1), -angle
-	else:
-		return img, angle
-
-
 def random_noise(img):
 	if np.random.rand() < RANDOM_IMAGE_NOISE_PROBABILITY:
 		return noise_generator(IMAGE_NOISE_TYPE, img)
@@ -127,7 +117,6 @@ def preprocess(img):
 def augment(img, angle):
 	augmented_img = img
 	augmented_angle = angle
-	# augmented_img, augmented_angle = random_flip(img, angle)
 	augmented_img = random_brightness(augmented_img)
 	augmented_img = random_noise(augmented_img)
 

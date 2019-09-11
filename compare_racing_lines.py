@@ -6,7 +6,7 @@ from scipy.spatial.distance import euclidean
 
 
 def compare(line1, line2):
-	distance, path = fastdtw(line1, line2, dist=euclidean)
+	distance, path = fastdtw(line1, line2, dist=euclidean, radius=10)
 	print(distance)
 	pass
 

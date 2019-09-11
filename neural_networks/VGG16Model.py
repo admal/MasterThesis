@@ -1,20 +1,14 @@
 import tensorflow as tf
-from config import *
 from data_augmentation import INPUT_SHAPE
 from neural_networks.ModelBase import ModelBase
 
-
 class VGG16Model(ModelBase):
-	def model(self):
+	def model(self, fine_tuning):
 		model_vgg16_conv = tf.keras.applications.VGG16(
 			weights='imagenet',
 			include_top=False,
 			input_shape=INPUT_SHAPE
 		)
-		# layers_count = len(model_vgg16_conv.layers)
-		# for layer in model_vgg16_conv.layers[ :int(layers_count/2)]:
-		# 	layer.trainable = False
-
 		model_vgg16_conv.trainable = True
 		set_trainable = False
 		for layer in model_vgg16_conv.layers:

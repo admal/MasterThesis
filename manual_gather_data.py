@@ -1,5 +1,4 @@
 # Modified file: Carla 0.8.4 manual_control.py
-# Changes: adjust script for my data collection, joystick controller
 
 # Running carla simulator
 # CarlaUE4.exe /Game/Maps/Town04 -carla-settings=CarlaSettings.ini -windowed -ResX=800 -ResY=600 -carla-server
@@ -19,7 +18,7 @@ import logging
 import time
 
 from config import MEASUREMENTS_CSV_FILENAME
-from gathering_data_common import generate_settings, generate_run_arguments, create_out_directory, save_run_config, \
+from gathering_data_common import generate_run_arguments, create_out_directory, save_run_config, \
 	write_measurements_to_csv, save_frame_image, get_settings_for_scene
 
 try:

@@ -5,3 +5,4 @@ carla/
 .idea/tasks.xml
 trained_models/
 gathering_data.log
+*.log

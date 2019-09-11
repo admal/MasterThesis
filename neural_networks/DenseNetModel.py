@@ -4,8 +4,8 @@ import tensorflow as tf
 
 
 class DenseNetModel(ModelBase):
-	def model(self):
-		densenet = tf.keras.applications.densenet.DenseNet121(
+	def model(self, fine_tuning):
+		densenet = tf.keras.applications.densenet.DenseNet169(
 			weights='imagenet',
 			include_top=False,
 			input_shape=INPUT_SHAPE,
